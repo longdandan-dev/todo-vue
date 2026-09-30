@@ -1,0 +1,370 @@
+/* ==========================================================================
+   待办清单 · 全局样式
+   --------------------------------------------------------------------------
+   分两层：
+   ① 设计令牌（:root 里的变量）—— 全站公用的"值"
+   ② 元素级样式（body / button / input / .panel ...）—— 全站统一的"外观"
+   为什么放全局而不是 App.vue 的 <style scoped>？
+   因为 scoped 只管"本组件模板里的元素"，管不到 TodoItem.vue 里的按钮。
+   ========================================================================== */
+
+/* --------------------------------------------------------------------------
+   ① 设计令牌 —— 与 music-player 同一套，保证整个作品集是一个视觉体系
+   -------------------------------------------------------------------------- */
+:root {
+  /* 底色两级 + 描边（方案 B：淡蓝渐变底 + 白卡） */
+  --bg: #eaf1ff; /* 渐变起点色 */
+  --panel: #ffffff; /* 卡片底 */
+  --panel-2: #f4f7fc; /* 输入框底 / 行悬停底 */
+  --border: #dbe3ef;
+
+  /* 文字三档（亮底上的层次靠"深浅灰"，不是靠透明度） */
+  --text: #1e293b; /* 正文（13.6~14.6:1） */
+  --text-2: #5b6470; /* 次要文字：比文字浅一档，但在最深的底（输入框 #f4f7fc）上也有 6:1 */
+  --text-dim: #5b6470; /* 序号 / 占位符：视觉上要浅，但必须能看清，所以和次要文字同值 */
+  --text-done: #7c8798; /* 只给"已完成"的标题：比正文淡，仍有 4.9:1（4.5 的线以上） */
+
+  /* 主色 + 辅助色：主色与作品集官网统一为 #2563eb */
+  --accent: #2563eb;
+  --accent-2: #22d3ee;
+  --accent-soft: rgba(37, 99, 235, 0.1);
+  --accent-light: #2563eb; /* 悬停用同一蓝，靠位移/阴影表现 */
+  --accent-deep: #1d4ed8; /* 按下时更深 */
+  --danger: #dc2626;
+  --danger-bg: #fef2f2;
+  --danger-text: #b91c1c;
+  --on-accent: #ffffff;
+
+  /* 布局尺寸 */
+  --max-w: 720px;
+  --radius: 14px;
+  --radius-sm: 8px;
+  --shadow: 0 10px 30px rgba(37, 99, 235, 0.12);
+
+  /* 间距：一律 4 的倍数（--sp-half 是唯一例外，用于 1px 级微调） */
+  --sp-half: 2px;
+  --sp-1: 4px;
+  --sp-2: 8px;
+  --sp-3: 12px;
+  --sp-4: 16px;
+  --sp-5: 24px;
+  --sp-6: 32px;
+  --sp-7: 48px;
+
+  /* 字号阶梯：只允许这几档 */
+  --fs-xs: 12px;
+  --fs-sm: 13px;
+  --fs-md: 16px;
+  --fs-lg: 18px;
+  --fs-xl: 20px;
+  --fs-2xl: 22px;
+
+  /* 动效 */
+  --t-fast: 0.15s;
+  --t-mid: 0.2s;
+  --focus-ring: 2px solid var(--accent);
+  --accent-ring: rgba(37, 99, 235, 0.18);
+}
+
+/* --------------------------------------------------------------------------
+   ② 基础重置与排版
+   -------------------------------------------------------------------------- */
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  min-height: 100vh;
+  /* 方案 B 的底色：淡蓝 → 近白，竖向渐变；fixed 让内容变长时渐变不被拉长 */
+  background: linear-gradient(180deg, var(--bg) 0%, #f8fbff 100%);
+  background-attachment: fixed;
+  color: var(--text);
+  font-family:
+    system-ui,
+    -apple-system,
+    'Segoe UI',
+    'Microsoft YaHei',
+    sans-serif;
+  font-size: var(--fs-md);
+  line-height: 1.6;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* 整个应用居中，上下留白用令牌 */
+#app {
+  max-width: var(--max-w);
+  margin: 0 auto;
+  padding: var(--sp-6) var(--sp-4) var(--sp-7);
+}
+
+h1 {
+  margin: 0 0 var(--sp-5);
+  font-size: var(--fs-2xl);
+  font-weight: 700;
+  letter-spacing: 0.5px;
+}
+
+/* --------------------------------------------------------------------------
+   ③ 卡片面板 —— 视觉母题：顶部一条 3px 主色渐变条（和播放器面板同一个母题）
+   -------------------------------------------------------------------------- */
+.panel {
+  position: relative;
+  min-height: 320px; /* 内容少时卡片不至于矮得"头重脚轻" */
+  padding: var(--sp-5) var(--sp-5) var(--sp-5);
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  overflow: hidden; /* 让顶部渐变条被圆角裁掉 */
+}
+
+/* 母题：顶部 3px 主色 → 辅助色渐变条；用伪元素画，不占 HTML 结构 */
+.panel::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 3px;
+  background: linear-gradient(90deg, var(--accent), var(--accent-2));
+}
+
+/* --------------------------------------------------------------------------
+   ④ 筛选标签页
+   -------------------------------------------------------------------------- */
+.tabs {
+  display: flex;
+  gap: var(--sp-2);
+  margin-bottom: var(--sp-4);
+}
+
+.tab {
+  padding: var(--sp-2) var(--sp-4);
+  background: transparent;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  color: var(--text-2);
+  font-size: var(--fs-sm);
+  font-family: inherit;
+  cursor: pointer;
+  transition:
+    background var(--t-fast),
+    color var(--t-fast),
+    border-color var(--t-fast);
+}
+
+.tab:hover {
+  color: var(--text);
+  border-color: var(--accent);
+}
+
+/* 选中态：主色底 + 白字，一眼可读 */
+.tab.on {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: var(--on-accent);
+  font-weight: 600;
+}
+
+/* --------------------------------------------------------------------------
+   ⑤ 输入框 + 按钮
+   -------------------------------------------------------------------------- */
+.field {
+  display: flex;
+  gap: var(--sp-2);
+  margin-top: var(--sp-4);
+}
+
+input[type='text'],
+input:not([type]) {
+  flex: 1;
+  min-width: 0;
+  padding: var(--sp-3) var(--sp-4);
+  background: var(--panel-2);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  color: var(--text);
+  font-size: var(--fs-md);
+  font-family: inherit;
+  transition:
+    border-color var(--t-fast),
+    box-shadow var(--t-fast);
+}
+
+input::placeholder {
+  color: var(--text-dim);
+}
+
+input:focus {
+  outline: none;
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px var(--accent-ring);
+}
+
+/* 主按钮 */
+button {
+  padding: var(--sp-3) var(--sp-4);
+  background: var(--accent);
+  border: 1px solid var(--accent);
+  border-radius: var(--radius-sm);
+  color: var(--on-accent);
+  font-size: var(--fs-sm);
+  font-family: inherit;
+  font-weight: 600;
+  cursor: pointer;
+  transition:
+    background var(--t-fast),
+    border-color var(--t-fast),
+    transform var(--t-fast);
+}
+
+button:hover {
+  background: var(--accent-light);
+  border-color: var(--accent-light);
+}
+
+button:active {
+  background: var(--accent-deep);
+  border-color: var(--accent-deep);
+  transform: translateY(1px);
+}
+
+/* 键盘聚焦：只给键盘用户看（鼠标点不显示，避免"点一下留个框"） */
+button:focus-visible,
+.tab:focus-visible,
+input:focus-visible {
+  outline: var(--focus-ring);
+  outline-offset: 2px;
+}
+
+/* 次要按钮（列表行里的勾选 / 删除）：描边款 */
+.btn-ghost {
+  padding: var(--sp-1) var(--sp-3);
+  background: transparent;
+  border: 1px solid var(--border);
+  color: var(--text-2);
+  font-weight: 500;
+}
+
+.btn-ghost:hover {
+  background: var(--accent-soft);
+  border-color: var(--accent);
+  color: var(--text);
+}
+
+.btn-ghost:active {
+  background: var(--accent-soft);
+  border-color: var(--accent-deep);
+}
+
+/* 危险动作（删除）：悬停时才露出红色，避免满屏红字 */
+.btn-danger:hover {
+  background: var(--danger-bg);
+  border-color: var(--danger);
+  color: var(--danger-text);
+}
+
+/* --------------------------------------------------------------------------
+   ⑥ 列表
+   -------------------------------------------------------------------------- */
+.list {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.row {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-3);
+  padding: var(--sp-3) var(--sp-2) var(--sp-3) var(--sp-3);
+  border-bottom: 1px solid var(--border);
+  border-left: 3px solid transparent;
+  transition:
+    background var(--t-fast),
+    border-color var(--t-fast);
+}
+
+.row:last-child {
+  border-bottom: none;
+}
+
+.row:hover {
+  background: var(--panel-2);
+}
+
+/* 完成态：左侧竖条点亮 + 标题淡化加删除线（信息层次，不只是画条线） */
+.row.done {
+  border-left-color: var(--accent);
+  background: var(--accent-soft);
+}
+
+.row-index {
+  flex: none;
+  min-width: 20px;
+  color: var(--text-dim);
+  font-size: var(--fs-xs);
+  font-variant-numeric: tabular-nums;
+}
+
+.row-title {
+  flex: 1;
+  min-width: 0;
+  font-size: var(--fs-md);
+  overflow-wrap: anywhere;
+}
+
+.row.done .row-title {
+  color: var(--text-done);
+  text-decoration: line-through;
+}
+
+.row-actions {
+  display: flex;
+  flex: none;
+  gap: var(--sp-1);
+}
+
+/* --------------------------------------------------------------------------
+   ⑦ 统计与空状态
+   -------------------------------------------------------------------------- */
+.count {
+  margin: 0 0 var(--sp-4);
+  color: var(--text-2);
+  font-size: var(--fs-sm);
+  font-variant-numeric: tabular-nums;
+}
+
+.empty {
+  padding: var(--sp-6) var(--sp-4);
+  color: var(--text-dim);
+  font-size: var(--fs-sm);
+  text-align: center;
+  border: 1px dashed var(--border);
+  border-radius: var(--radius-sm);
+}
+
+/* --------------------------------------------------------------------------
+   ⑧ 触摸端修正：触摸屏没有 hover，把悬停效果关掉（否则点完会"粘住"）
+   -------------------------------------------------------------------------- */
+@media (hover: none) {
+  .tab:hover,
+  button:hover,
+  .row:hover {
+    background: transparent;
+    border-color: var(--border);
+    color: var(--text-2);
+  }
+
+  .row.done:hover {
+    background: var(--accent-soft);
+  }
+}
+
+/* 用户系统设置了"减少动效"就全部关掉 */
+@media (prefers-reduced-motion: reduce) {
+  * {
+    transition: none !important;
+  }
+}
